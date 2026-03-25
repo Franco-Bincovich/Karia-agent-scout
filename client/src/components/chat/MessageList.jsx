@@ -18,8 +18,9 @@ export default function MessageList({ mensajes, cargando }) {
   return (
     <div
       style={{
-        flex: 1, overflowY: 'auto', padding: '1rem 0',
+        flex: 1, overflowY: 'auto', padding: '0.75rem 0',
         display: 'flex', flexDirection: 'column',
+        background: 'var(--chat-bg)',
       }}
     >
       {mensajes.length === 0 && !cargando && (

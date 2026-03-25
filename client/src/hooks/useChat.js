@@ -3,7 +3,7 @@
 // Llama a chatApi.enviar y actualiza el estado con la respuesta.
 
 import { useState, useCallback } from 'react';
-import { chatApi } from '../services/api';
+import { chatApi, conversacionesApi } from '../services/api';
 import { useAuth } from './useAuth';
 
 /**
@@ -26,19 +26,14 @@ export function useChat() {
     async (texto) => {
       if (!texto.trim() || cargando) return;
 
-      // 1. Agregar mensaje del usuario al estado inmediatamente
       setMensajes((prev) => [...prev, crearMensaje('user', texto.trim())]);
       setCargando(true);
       setError(null);
 
       try {
-        // 2. Llamar al backend
         const data = await chatApi.enviar(texto.trim(), conversacionId, token);
-
-        // 3. Agregar respuesta del agente
         setMensajes((prev) => [...prev, crearMensaje('agent', data.respuesta)]);
 
-        // 4. Guardar conversacionId si es nueva conversación
         if (!conversacionId && data.conversacionId) {
           setConversacionId(data.conversacionId);
         }
@@ -53,5 +48,35 @@ export function useChat() {
     [token, conversacionId, cargando]
   );
 
-  return { mensajes, enviar, cargando, error };
+  /**
+   * Carga una conversación previa desde el backend.
+   * @param {string} id - ID de la conversación a cargar
+   */
+  const cargarConversacion = useCallback(
+    async (id) => {
+      if (cargando) return;
+      setCargando(true);
+      setError(null);
+
+      try {
+        const data = await conversacionesApi.cargar(id, token);
+        const msgs = (data.mensajes || []).map((m) => ({
+          id: m.id || crypto.randomUUID(),
+          rol: m.rol,
+          texto: m.texto,
+          timestamp: new Date(m.timestamp || m.created_at),
+        }));
+        setMensajes(msgs);
+        setConversacionId(id);
+      } catch (err) {
+        const msg = err.message || 'Error al cargar conversación';
+        setError(msg);
+      } finally {
+        setCargando(false);
+      }
+    },
+    [token, cargando]
+  );
+
+  return { mensajes, enviar, cargando, error, cargarConversacion };
 }

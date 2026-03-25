@@ -8,7 +8,7 @@ const cors = require('cors');
 const config = require('./config');
 const { errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
-const chatRoutes = require('./routes/chatRoutes');
+const { chatRouter, conversacionesRouter } = require('./routes/chatRoutes');
 const filesRoutes = require('./routes/filesRoutes');
 
 const app = express();
@@ -35,7 +35,8 @@ app.get('/health', (req, res) => {
 
 // Rutas
 app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/chat', chatRouter);
+app.use('/api/conversaciones', conversacionesRouter);
 app.use('/api/files', filesRoutes);
 
 // 404 — ruta no encontrada

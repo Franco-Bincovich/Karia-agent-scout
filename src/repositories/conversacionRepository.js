@@ -99,4 +99,26 @@ async function updateMessages(id, messages, userId) {
   return data;
 }
 
-module.exports = { findByUser, findById, create, updateMessages };
+/**
+ * Actualiza campos de una conversación.
+ *
+ * @param {string} id
+ * @param {Object} campos - campos a actualizar (titulo, etc.)
+ * @returns {Promise<Object>} conversación actualizada
+ */
+async function update(id, campos) {
+  const { data, error } = await supabase
+    .from('conversaciones_old')
+    .update({ ...campos, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    logger.error('Error en update conversacion', { error: error.message });
+    throw new AppError('Error al actualizar conversación', 'DB_ERROR', 500);
+  }
+  return data;
+}
+
+module.exports = { findByUser, findById, create, updateMessages, update };

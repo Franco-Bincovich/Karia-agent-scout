@@ -1,13 +1,12 @@
 // components/chat/ChatInput.jsx
-// Input de texto + botón enviar.
-// Enter envía, Shift+Enter inserta nueva línea.
-// Botón deshabilitado mientras cargando === true.
+// Input compacto estilo WhatsApp — borde pill, botón circular teal.
 
 import { useState } from 'react';
 
 export default function ChatInput({ onEnviar, cargando }) {
   const [texto, setTexto] = useState('');
   const [focused, setFocused] = useState(false);
+  const activo = !cargando && texto.trim();
 
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -24,48 +23,52 @@ export default function ChatInput({ onEnviar, cargando }) {
   }
 
   return (
-    <div
-      style={{
-        display: 'flex', gap: '0.6rem', alignItems: 'flex-end',
-        padding: '0.85rem 1rem',
-        background: 'var(--color-white)',
-        borderTop: '1.5px solid var(--color-gris)',
-      }}
-    >
+    <div style={{
+      display: 'flex', gap: '0.5rem', alignItems: 'center',
+      padding: '0.5rem 0.75rem',
+      background: 'var(--color-white)',
+      borderTop: '1px solid #e5e5e5',
+    }}>
       <textarea
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
         onKeyDown={handleKeyDown}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder="Preguntale algo a Scout..."
+        placeholder="Escribí un mensaje..."
         rows={1}
         style={{
-          flex: 1, resize: 'none', padding: '0.6rem 0.85rem',
-          border: `1.5px solid ${focused ? 'var(--color-teal)' : 'var(--color-gris)'}`,
-          borderRadius: 'var(--border-radius)',
-          fontFamily: 'var(--font)', fontSize: '15px',
+          flex: 1, resize: 'none', height: '44px',
+          padding: '0.6rem 1rem',
+          border: `1.5px solid ${focused ? 'var(--color-teal)' : '#e0e0e0'}`,
+          borderRadius: '22px',
+          fontFamily: 'var(--font)', fontSize: 'var(--chat-font-size)',
           outline: 'none', lineHeight: '1.5',
-          maxHeight: '120px', overflowY: 'auto',
+          maxHeight: '88px', overflowY: 'auto',
           transition: 'border-color 0.2s',
           color: 'var(--color-text)',
         }}
       />
       <button
         onClick={submit}
-        disabled={cargando || !texto.trim()}
+        disabled={!activo}
+        aria-label="Enviar mensaje"
         style={{
-          padding: '0.6rem 1.2rem', height: '40px',
-          background: cargando || !texto.trim() ? 'var(--color-gris)' : 'var(--color-primary)',
-          color: 'var(--color-white)', border: 'none',
-          borderRadius: 'var(--border-radius)', fontSize: '15px',
-          fontWeight: 600, cursor: cargando || !texto.trim() ? 'not-allowed' : 'pointer',
-          transition: 'background 0.2s', whiteSpace: 'nowrap',
+          width: '40px', height: '40px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: activo ? 'var(--color-teal)' : '#e0e0e0',
+          border: 'none', borderRadius: '50%',
+          cursor: activo ? 'pointer' : 'not-allowed',
+          transition: 'background 0.2s, transform 0.1s',
         }}
-        onMouseEnter={(e) => { if (!cargando && texto.trim()) e.target.style.background = 'var(--color-teal)'; }}
-        onMouseLeave={(e) => { if (!cargando && texto.trim()) e.target.style.background = 'var(--color-primary)'; }}
+        onMouseEnter={(e) => { if (activo) e.currentTarget.style.background = '#38bfb7'; }}
+        onMouseLeave={(e) => { if (activo) e.currentTarget.style.background = 'var(--color-teal)'; }}
+        onMouseDown={(e) => { if (activo) e.currentTarget.style.transform = 'scale(0.93)'; }}
+        onMouseUp={(e) => { if (activo) e.currentTarget.style.transform = 'scale(1)'; }}
       >
-        Enviar
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M5 12h14M13 5l7 7-7 7" stroke={activo ? '#fff' : '#aaa'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </button>
     </div>
   );

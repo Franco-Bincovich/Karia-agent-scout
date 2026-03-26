@@ -46,7 +46,7 @@ router.post(
 );
 
 // GET /api/integraciones/google/callback  (Google redirige aquí, sin JWT propio)
-router.get('/google/callback', callbackGoogle);
+router.get('/google/callback', apiRateLimiter, callbackGoogle);
 
 // DELETE /api/integraciones/:tipo
 router.delete(

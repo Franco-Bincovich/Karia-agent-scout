@@ -12,7 +12,7 @@ const logger = require('../utils/logger').child({ module: 'funcionalidadReposito
  * @param {string} userId
  * @returns {Promise<Object[]>}
  */
-async function findByUser(userId) {
+async function findActiveByUser(userId) {
   const { data, error } = await supabase
     .from('funcionalidades-escobar')
     .select('*')
@@ -21,7 +21,7 @@ async function findByUser(userId) {
     .order('created_at', { ascending: true });
 
   if (error) {
-    logger.error('Error en findByUser funcionalidad', { error: error.message });
+    logger.error('Error en findActiveByUser funcionalidad', { error: error.message });
     throw new AppError('Error al obtener funcionalidades', 'DB_ERROR', 500);
   }
   return data;
@@ -119,4 +119,4 @@ async function toggleActivo(id, userId) {
   return update(id, userId, { activo: !actual.activo });
 }
 
-module.exports = { findByUser, findAllByUser, create, update, toggleActivo };
+module.exports = { findActiveByUser, findAllByUser, create, update, toggleActivo };

@@ -19,6 +19,21 @@ const BLOCKLIST_PROMPT = [
   /nueva personalidad/i,
   /act as/i,
   /\bDAN\b/,
+  /pretend/i,
+  /disregard/i,
+  /simulate/i,
+  /roleplay/i,
+  /from now on/i,
+  /new persona/i,
+  /forget everything/i,
+  /ignore all/i,
+  /bypass/i,
+  /act[uú]a como/i,
+  /fing[ií] que/i,
+  /olvid[aá] todo/i,
+  /ignor[aá] todo/i,
+  /nueva personalidad/i,
+  /sin restricciones/i,
 ];
 
 /**
@@ -97,9 +112,10 @@ async function toggleActivo(id, userId) {
  *
  * @param {string} userId
  * @returns {Promise<string|null>}
+ * @throws {AppError} code: 'DB_ERROR' si falla la consulta a Supabase
  */
 async function buildSystemPrompt(userId) {
-  const funcionalidades = await funcionalidadRepo.findByUser(userId);
+  const funcionalidades = await funcionalidadRepo.findActiveByUser(userId);
   if (funcionalidades.length === 0) return null;
 
   return funcionalidades.map((f) => `=== ${f.nombre} ===\n${f.system_prompt}`).join('\n\n');

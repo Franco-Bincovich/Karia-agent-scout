@@ -3,9 +3,8 @@
 // Docs: https://gamma.app/docs/api
 
 const { AppError } = require('../middleware/errorHandler');
+const config = require('../config');
 const logger = require('../utils/logger').child({ module: 'gammaClient' });
-
-const ENDPOINT = 'https://api.gamma.app/v1/generate';
 
 const FORMATO_MAP = {
   presentacion: 'presentation',
@@ -24,7 +23,7 @@ const FORMATO_MAP = {
 async function generarPresentacionGamma(apiKey, { titulo, contenido, formato = 'presentacion' }) {
   const tipo = FORMATO_MAP[formato] || 'presentation';
 
-  const res = await fetch(ENDPOINT, {
+  const res = await fetch(config.gamma.endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

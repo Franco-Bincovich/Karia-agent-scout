@@ -42,7 +42,13 @@
       "Bash(node -e \"const { TOOLS, ejecutarTool } = require\\(''./src/tools''\\); console.log\\(''tools/index.js OK, TOOLS:'', TOOLS.length\\);\")",
       "Bash(wc -l \"C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\"/src/**/*.js)",
       "Bash(grep -E \"\\(hardcod|''''[a-zA-Z0-9]{20,}|\"\"[a-zA-Z0-9]{20,}\\)\")",
-      "Bash(find 'C:/Users/Franco Bincovich/Desktop/Visual Code/Karia-Agent/Karia-Escobar' -path *client* -type f -name *.js -o -path *client* -type f -name *.jsx)"
+      "Bash(find 'C:/Users/Franco Bincovich/Desktop/Visual Code/Karia-Agent/Karia-Escobar' -path *client* -type f -name *.js -o -path *client* -type f -name *.jsx)",
+      "Bash(find 'C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar' -type f -name *.md -o -name Dockerfile)",
+      "Bash(wc -l C:UsersFranco BincovichDesktopVisual CodeKaria-AgentKaria-Escobarsrc/**/*.js)",
+      "Bash(find 'C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src' -type f -name *.js -exec wc -l {} +)",
+      "Bash(find 'C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\client\\\\src' -type f -name *.jsx -exec wc -l {} +)",
+      "Bash(find 'C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\migrations' -type f -name *.sql)",
+      "Bash(grep -v \"^--$\")"
     ]
   }
 }

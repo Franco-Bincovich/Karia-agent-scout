@@ -37,6 +37,11 @@ module.exports = {
       process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3003/api/integraciones/google/callback',
   },
 
+  gamma: {
+    apiKey: process.env.GAMMA_API_KEY,
+    endpoint: 'https://api.gamma.app/v1/generate',
+  },
+
   rateLimit: {
     login: { windowMs: 15 * 60 * 1000, max: 10 },
     api: { windowMs: 15 * 60 * 1000, max: 100 },

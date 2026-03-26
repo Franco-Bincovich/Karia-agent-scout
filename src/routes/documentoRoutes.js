@@ -5,27 +5,14 @@ const express = require('express');
 const multer = require('multer');
 const os = require('os');
 const path = require('path');
-const rateLimit = require('express-rate-limit');
 const { check } = require('express-validator');
-const config = require('../config');
 const { verificarToken } = require('../middleware/auth');
 const manejarErroresValidacion = require('../middleware/manejarErroresValidacion');
+const { uploadRateLimiter } = require('../middleware/rateLimiters');
 const { subirDocumento } = require('../controllers/documentoController');
 const { AppError } = require('../middleware/errorHandler');
 
 const router = express.Router();
-
-const uploadRateLimiter = rateLimit({
-  windowMs: config.rateLimit.api.windowMs,
-  max: config.rateLimit.api.max,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    error: true,
-    message: 'Demasiadas solicitudes, intentá de nuevo más tarde',
-    code: 'RATE_LIMIT_EXCEEDED',
-  },
-});
 
 const EXTENSIONES_PERMITIDAS = new Set(['.pdf', '.xlsx', '.xls', '.docx', '.csv', '.txt']);
 
@@ -58,8 +45,10 @@ router.post(
   [
     check('archivo').custom((_value, { req }) => {
       if (!req.file) {
-        throw new Error(
-          'No se recibió ningún archivo. Enviá el campo "archivo" como multipart/form-data.'
+        throw new AppError(
+          'No se recibió ningún archivo. Enviá el campo "archivo" como multipart/form-data.',
+          'ARCHIVO_REQUERIDO',
+          400
         );
       }
       return true;

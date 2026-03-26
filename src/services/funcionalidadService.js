@@ -22,10 +22,11 @@ const BLOCKLIST_PROMPT = [
 ];
 
 /**
- * Lista las funcionalidades activas de un usuario.
+ * Lista todas las funcionalidades de un usuario (activas e inactivas).
+ * Uso exclusivo del frontend para mostrar el panel de funcionalidades.
  *
- * @param {string} userId
- * @returns {Promise<Object[]>}
+ * @param {string} userId - ID del usuario autenticado
+ * @returns {Promise<Array<{ id: string, nombre: string, descripcion: string|null, activo: boolean, created_at: string }>>}
  */
 async function listar(userId) {
   return funcionalidadRepo.findAllByUser(userId);
@@ -44,7 +45,14 @@ async function crear(userId, { nombre, descripcion, system_prompt }) {
     throw new AppError('El system prompt no puede estar vacío', 'SYSTEM_PROMPT_REQUERIDO', 400);
   }
 
-  const patronDetectado = BLOCKLIST_PROMPT.find((re) => re.test(system_prompt));
+  // Normalizar antes de validar: NFC + remover zero-width chars + colapsar espacios
+  const promptNormalizado = system_prompt
+    .normalize('NFC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const patronDetectado = BLOCKLIST_PROMPT.find((re) => re.test(promptNormalizado));
   if (patronDetectado) {
     logger.warn('Intento de prompt injection bloqueado', {
       userId,
@@ -68,11 +76,13 @@ async function crear(userId, { nombre, descripcion, system_prompt }) {
 }
 
 /**
- * Activa o desactiva una funcionalidad.
+ * Alterna el estado activo/inactivo de una funcionalidad.
+ * Verifica ownership: solo el propietario puede modificar sus funcionalidades.
  *
- * @param {string} id
- * @param {string} userId
- * @returns {Promise<Object>}
+ * @param {string} id - UUID de la funcionalidad
+ * @param {string} userId - ID del usuario autenticado (control de acceso)
+ * @returns {Promise<{ id: string, activo: boolean }>}
+ * @throws {AppError} code: 'NOT_FOUND' si la funcionalidad no existe o no pertenece al usuario
  */
 async function toggleActivo(id, userId) {
   const row = await funcionalidadRepo.toggleActivo(id, userId);

@@ -8,31 +8,7 @@ const ExcelJS = require('exceljs');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger').child({ module: 'excelAvanzado' });
 const { TMP_DIR } = require('../utils/paths');
-
-// ── Helpers de estadísticas ───────────────────────────────────────────────────
-
-function statsNumericas(valores) {
-  if (valores.length === 0) return { suma: 0, promedio: 0, minimo: 0, maximo: 0 };
-  const suma = valores.reduce((a, b) => a + b, 0);
-  return {
-    suma: Math.round(suma * 100) / 100,
-    promedio: Math.round((suma / valores.length) * 100) / 100,
-    minimo: Math.min(...valores),
-    maximo: Math.max(...valores),
-  };
-}
-
-function masFrequentes(valores, top = 3) {
-  const conteo = new Map();
-  for (const v of valores) {
-    const k = String(v).trim();
-    if (k) conteo.set(k, (conteo.get(k) || 0) + 1);
-  }
-  return [...conteo.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, top)
-    .map(([valor, cantidad]) => ({ valor, cantidad }));
-}
+const { statsNumericas, masFrequentes } = require('../utils/stats');
 
 // ── Análisis de una hoja ──────────────────────────────────────────────────────
 

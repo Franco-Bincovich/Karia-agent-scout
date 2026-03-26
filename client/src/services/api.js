@@ -82,8 +82,7 @@ export const filesApi = {
   },
 };
 
-export async function uploadDocumento(archivo) {
-  const token = localStorage.getItem('karia_token');
+export async function uploadDocumento(archivo, token) {
   const formData = new FormData();
   formData.append('archivo', archivo);
 

@@ -22,7 +22,27 @@
       "Bash(grep -v \"//\")",
       "Bash(npm audit:*)",
       "Bash(node -e \":*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(find 'C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\migrations' -name *.sql)",
+      "Bash(grep -r \"console\\\\.\\\\\\(log\\\\|error\\\\|warn\\\\\\)\" 'C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src' --include=*.js)",
+      "Bash(grep -r process.env. 'C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src' --include=*.js)",
+      "Bash(while read:*)",
+      "Bash(do wc:*)",
+      "Bash(done)",
+      "Bash(echo \"exit code: $?\")",
+      "Bash(xargs wc:*)",
+      "Bash(grep -r \"console\\\\.log\\\\|console\\\\.error\\\\|console\\\\.warn\" 'C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src' --include=*.js)",
+      "Bash(grep -r process.env 'C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src' --include=*.js)",
+      "Bash(grep -E \"^[0-9]+ vulnerabilities|Severity:|^$\")",
+      "Bash(echo \"=== EXIT CODE: $?==\")",
+      "Bash(echo \"ESLint exit: $?\")",
+      "Bash(echo \"=== LINE COUNTS \\(>100 lines\\) ===\")",
+      "Bash(node -e \"const p = require\\(''''./package.json''''\\); console.log\\(JSON.stringify\\(p.dependencies, null, 2\\)\\)\")",
+      "Bash(node -e \"const { TOOLS } = require\\(''./src/tools/toolDefinitions''\\); console.log\\(''TOOLS count:'', TOOLS.length\\); TOOLS.forEach\\(t => console.log\\('' -'', t.name\\)\\);\")",
+      "Bash(node -e \"const { TOOLS, ejecutarTool } = require\\(''./src/tools''\\); console.log\\(''tools/index.js OK, TOOLS:'', TOOLS.length\\);\")",
+      "Bash(wc -l \"C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\"/src/**/*.js)",
+      "Bash(grep -E \"\\(hardcod|''''[a-zA-Z0-9]{20,}|\"\"[a-zA-Z0-9]{20,}\\)\")",
+      "Bash(find 'C:/Users/Franco Bincovich/Desktop/Visual Code/Karia-Agent/Karia-Escobar' -path *client* -type f -name *.js -o -path *client* -type f -name *.jsx)"
     ]
   }
 }

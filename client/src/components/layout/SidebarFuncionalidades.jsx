@@ -18,7 +18,7 @@ export default function SidebarFuncionalidades({ token }) {
       const data = await funcionalidadesApi.listar(token);
       setFuncionalidades(data.funcionalidades || []);
     } catch (err) {
-      console.error('[SidebarFuncionalidades] Error al cargar:', err.message);
+      if (import.meta.env.DEV) console.error('[SidebarFuncionalidades] Error al cargar:', err.message);
       setFuncionalidades([]);
     }
   }

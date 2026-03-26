@@ -4,25 +4,12 @@
 
 const { Router } = require('express');
 const { body, param } = require('express-validator');
-const rateLimit = require('express-rate-limit');
-const config = require('../config');
 const { verificarToken } = require('../middleware/auth');
 const manejarErroresValidacion = require('../middleware/manejarErroresValidacion');
+const { apiRateLimiter } = require('../middleware/rateLimiters');
 const { listar, crear, toggleActivo } = require('../controllers/funcionalidadController');
 
 const router = Router();
-
-const apiRateLimiter = rateLimit({
-  windowMs: config.rateLimit.api.windowMs,
-  max: config.rateLimit.api.max,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    error: true,
-    message: 'Demasiadas solicitudes, intentá de nuevo más tarde',
-    code: 'RATE_LIMIT_EXCEEDED',
-  },
-});
 
 // GET /api/funcionalidades
 router.get('/', verificarToken, listar);

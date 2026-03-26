@@ -109,7 +109,7 @@ export function useChat() {
       setError(null);
 
       try {
-        const { nombreArchivo, tipo, truncado, texto: contenido } = await uploadDocumento(archivo);
+        const { nombreArchivo, tipo, truncado, texto: contenido } = await uploadDocumento(archivo, token);
 
         let msg =
           `📎 Documento: ${nombreArchivo} (${tipo})\n\n` +

@@ -22,4 +22,6 @@ CREATE POLICY "funcionalidades_escobar_own_rows" ON "funcionalidades-escobar"
 
 GRANT ALL ON "funcionalidades-escobar" TO service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON "funcionalidades-escobar" TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON "funcionalidades-escobar" TO anon;
+-- anon no necesita acceso: la tabla es privada por diseño (RLS exige auth.uid()).
+-- Si esta migración se corre sobre una BD existente, ejecutar además en SQL Editor:
+-- REVOKE ALL ON "funcionalidades-escobar" FROM anon;

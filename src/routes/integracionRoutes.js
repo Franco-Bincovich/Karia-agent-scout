@@ -4,33 +4,14 @@
 
 const { Router } = require('express');
 const { body, param } = require('express-validator');
-const rateLimit = require('express-rate-limit');
-const config = require('../config');
 const { verificarToken } = require('../middleware/auth');
 const manejarErroresValidacion = require('../middleware/manejarErroresValidacion');
-const {
-  listar,
-  conectarApiKey,
-  conectarGoogle,
-  callbackGoogle,
-  desconectar,
-} = require('../controllers/integracionController');
-
-const TIPOS_VALIDOS = ['anthropic', 'openai', 'gmail', 'drive', 'calendar'];
+const { apiRateLimiter } = require('../middleware/rateLimiters');
+const { listar, conectarApiKey, desconectar } = require('../controllers/integracionController');
+const { conectarGoogle, callbackGoogle } = require('../controllers/oauthController');
+const { TIPOS_VALIDOS } = require('../constants/integraciones');
 
 const router = Router();
-
-const apiRateLimiter = rateLimit({
-  windowMs: config.rateLimit.api.windowMs,
-  max: config.rateLimit.api.max,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    error: true,
-    message: 'Demasiadas solicitudes, intentá de nuevo más tarde',
-    code: 'RATE_LIMIT_EXCEEDED',
-  },
-});
 
 // GET /api/integraciones
 router.get('/', verificarToken, listar);
@@ -50,8 +31,19 @@ router.post(
   conectarApiKey
 );
 
-// GET /api/integraciones/google/auth  (inicia flujo OAuth2)
-router.get('/google/auth', verificarToken, apiRateLimiter, conectarGoogle);
+// POST /api/integraciones/google/auth  (inicia flujo OAuth2 — credenciales en body, no en URL)
+router.post(
+  '/google/auth',
+  verificarToken,
+  apiRateLimiter,
+  [
+    body('servicios').isString().trim().notEmpty().withMessage('Seleccioná al menos un servicio'),
+    body('clientId').optional({ nullable: true }).isString().trim(),
+    body('clientSecret').optional({ nullable: true }).isString().trim(),
+  ],
+  manejarErroresValidacion,
+  conectarGoogle
+);
 
 // GET /api/integraciones/google/callback  (Google redirige aquí, sin JWT propio)
 router.get('/google/callback', callbackGoogle);

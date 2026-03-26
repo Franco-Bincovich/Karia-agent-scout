@@ -91,10 +91,13 @@ export default function ModalIntegraciones({ token, onClose, onConectado }) {
   async function conectarGoogle() {
     setCargandoGoogle(true); setErrorGoogle('');
     try {
-      const params = new URLSearchParams({ servicios: seleccionados.join(',') });
-      if (clientId.trim()) params.set('clientId', clientId.trim());
-      if (clientSecret.trim()) params.set('clientSecret', clientSecret.trim());
-      const { url } = await apiFetch(`/api/integraciones/google/auth?${params}`, {}, token);
+      const payload = { servicios: seleccionados.join(',') };
+      if (clientId.trim()) payload.clientId = clientId.trim();
+      if (clientSecret.trim()) payload.clientSecret = clientSecret.trim();
+      const { url } = await apiFetch('/api/integraciones/google/auth', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }, token);
       window.location.href = url;
     } catch (err) {
       setErrorGoogle(err.message || 'Error al iniciar OAuth');

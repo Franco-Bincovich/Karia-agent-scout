@@ -40,8 +40,8 @@ function separador() {
 function lineasContenido(contenido) {
   return contenido
     .split('\n')
-    .filter((l) => l.trim() !== '')
-    .map((l) => parrafoTexto(l));
+    .filter((linea) => linea.trim() !== '')
+    .map((linea) => parrafoTexto(linea));
 }
 
 function parrafoNumerado(texto, numero) {

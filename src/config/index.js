@@ -16,6 +16,10 @@ module.exports = {
     expiresIn: '8h',
   },
 
+  // Secret separado para firmar JWT de estado OAuth — evita que tokens de sesión
+  // sean intercambiables con tokens de estado OAuth.
+  oauthStateSecret: (process.env.JWT_SECRET || '') + ':oauth-state',
+
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY,
     model: 'claude-sonnet-4-5',

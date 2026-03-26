@@ -4,6 +4,7 @@
 
 const crypto = require('crypto');
 const config = require('../config');
+const { AppError } = require('../middleware/errorHandler');
 
 const ALGORITHM = 'aes-256-cbc';
 const IV_LENGTH = 16;
@@ -34,6 +35,9 @@ function cifrar(texto) {
  * @returns {string} Texto plano descifrado
  */
 function descifrar(valor) {
+  if (typeof valor !== 'string' || !valor.includes(':')) {
+    throw new AppError('Credencial con formato inválido', 'CRYPTO_FORMAT_ERROR', 500);
+  }
   const [ivHex, textoHex] = valor.split(':');
   const clave = derivarClave();
   const decipher = crypto.createDecipheriv(ALGORITHM, clave, Buffer.from(ivHex, 'hex'));

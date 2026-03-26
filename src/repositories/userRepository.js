@@ -14,7 +14,7 @@ const logger = require('../utils/logger').child({ module: 'userRepository' });
  */
 async function findByEmail(email) {
   const { data, error } = await supabase
-    .from('usuarios_old')
+    .from('usuarios-escobar')
     .select('*')
     .eq('email', email)
     .maybeSingle();
@@ -34,7 +34,7 @@ async function findByEmail(email) {
  */
 async function findById(id) {
   const { data, error } = await supabase
-    .from('usuarios_old')
+    .from('usuarios-escobar')
     .select('*')
     .eq('id', id)
     .maybeSingle();
@@ -54,11 +54,7 @@ async function findById(id) {
  * @throws {AppError} code: 'EMAIL_ALREADY_EXISTS' si el email ya existe
  */
 async function create(datos) {
-  const { data, error } = await supabase
-    .from('usuarios_old')
-    .insert(datos)
-    .select()
-    .single();
+  const { data, error } = await supabase.from('usuarios-escobar').insert(datos).select().single();
 
   if (error) {
     if (error.code === '23505') {
@@ -80,7 +76,7 @@ async function create(datos) {
  */
 async function update(id, campos) {
   const { data, error } = await supabase
-    .from('usuarios_old')
+    .from('usuarios-escobar')
     .update({ ...campos, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()

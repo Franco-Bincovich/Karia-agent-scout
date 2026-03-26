@@ -1,5 +1,5 @@
 {
-  "name": "karia-scout",
+  "name": "karia-escobar",
   "version": "1.0.0",
   "description": "Agente de inteligencia competitiva de precios para equipos de ventas de electrodomésticos.",
   "main": "src/server.js",
@@ -14,6 +14,7 @@
     "@anthropic-ai/sdk": "0.27.3",
     "@supabase/supabase-js": "2.99.3",
     "bcryptjs": "2.4.3",
+    "cheerio": "1.2.0",
     "cors": "2.8.5",
     "docx": "8.5.0",
     "dotenv": "16.4.5",
@@ -21,9 +22,12 @@
     "express": "4.22.1",
     "express-rate-limit": "7.2.0",
     "express-validator": "7.0.1",
-    "googleapis": "140.0.0",
+    "googleapis": "171.4.0",
     "helmet": "7.1.0",
     "jsonwebtoken": "9.0.2",
+    "mammoth": "1.8.0",
+    "multer": "1.4.5-lts.1",
+    "pdf-parse": "1.1.1",
     "winston": "3.13.0"
   },
   "devDependencies": {

@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 
-const BIENVENIDA = '¡Hola! Soy Scout. Podés pedirme que busque precios, compare tiendas o te genere un reporte.';
+const BIENVENIDA = '¡Hola! Soy KarIA Escobar. Subí un documento y empezamos a trabajar.';
 
 export default function MessageList({ mensajes, cargando }) {
   const bottomRef = useRef(null);

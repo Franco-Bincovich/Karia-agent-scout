@@ -1,65 +1,86 @@
 // tools/index.js
-// Registro central de herramientas del agente KarIA Scout.
+// Registro central de herramientas del agente KarIA Escobar.
 // TOOLS se pasa directamente a la API de Anthropic en agent.js.
-// Las tools que llaman a APIs externas se protegen con circuit breaker + retry.
 
 const { AppError } = require('../middleware/errorHandler');
 const { TOOLS } = require('./toolDefinitions');
-const { withCircuitBreaker } = require('../utils/circuitBreaker');
-const { withRetry } = require('../utils/reintentos');
 
-// ── Opciones de protección ────────────────────────────────────────────────────
-const CB_OPTS = { maxFallos: 5, cooldownMs: 30000 };
-const R2 = { maxIntentos: 2 }; // operaciones de escritura (envío de mail, crear evento)
-const R3 = { maxIntentos: 3 }; // operaciones de lectura
-
-/** Envuelve fn con retry + circuit breaker. Inicializado una sola vez al cargar el módulo. */
-function proteger(fn, nombre, retryOpts) {
-  return withCircuitBreaker(withRetry(fn, retryOpts), { nombre, ...CB_OPTS });
-}
-
-// ── Tools con APIs externas (circuit breaker + retry) ────────────────────────
-const { buscarPrecios } = require('./search');
-const { leerNoLeidos, buscarCorreos, enviarCorreo } = require('./google/gmail');
-const { listarEventos, crearEvento, eliminarEvento } = require('./google/calendar');
-const { subirArchivo } = require('./google/drive');
-const { buscarContactos } = require('./google/contactos');
-const { generarPresentacion } = require('./gamma');
-
-const buscarPreciosSeguro = proteger(buscarPrecios, 'buscar_precios', R2);
-const leerNoLeidosSeguro = proteger(leerNoLeidos, 'leer_correos', R3);
-const buscarCorreosSeguro = proteger(buscarCorreos, 'buscar_correos', R3);
-const enviarCorreoSeguro = proteger(enviarCorreo, 'enviar_correo', R2);
-const listarEventosSeguro = proteger(listarEventos, 'listar_eventos', R3);
-const crearEventoSeguro = proteger(crearEvento, 'crear_evento', R2);
-const eliminarEventoSeguro = proteger(eliminarEvento, 'eliminar_evento', R2);
-const subirArchivoSeguro = proteger(subirArchivo, 'subir_archivo', R2);
-const buscarContactosSeguro = proteger(buscarContactos, 'buscar_contactos', R3);
-const generarPresentacionSegura = proteger(generarPresentacion, 'generar_presentacion', R2);
-
-// ── Tools locales (filesystem — sin circuit breaker) ─────────────────────────
+// ── Tools locales (filesystem) ────────────────────────────────────────────────
 const { generarExcel } = require('./excel');
-const { generarExcelComparacion } = require('./excelComparacion');
 const { generarWord } = require('./export');
 
-// Tools que generan archivos en disco — requieren userId para prefixar el nombre (anti-IDOR)
-const FILE_TOOLS = new Set(['generar_excel', 'generar_excel_comparacion', 'generar_word']);
+// ── Tools de análisis (wrappers — Claude procesa el resultado) ────────────────
+function analizarDocumento({ contenido, instruccion, formatoSalida = 'texto_libre' }) {
+  return {
+    tipo: 'analizar_documento',
+    instruccion,
+    formatoSalida,
+    longitudContenido: contenido.length,
+    contenido,
+  };
+}
+function analizarExcelBasico({
+  nombreHoja,
+  datos,
+  instruccion = 'Resumí los datos con totales, promedios y observaciones clave.',
+}) {
+  return {
+    tipo: 'analizar_excel_basico',
+    nombreHoja,
+    instruccion,
+    cantidadLineas: datos.split('\n').length,
+    datos,
+  };
+}
 
-// ── Mapa de despacho — nivel de módulo para no recrearlo en cada llamada ──────
+// ── Excel avanzado ────────────────────────────────────────────────────────────
+const { analizarExcelAvanzado } = require('./excelAvanzado');
+
+// ── Gamma AI ─────────────────────────────────────────────────────────────────
+const { generarPresentacion } = require('./gamma');
+
+// ── Tools de búsqueda ────────────────────────────────────────────────────────
+const { buscarWeb, buscarNormativa, buscarOrdenanzas } = require('./search');
+
+// ── Tools Google Workspace ────────────────────────────────────────────────────
+const { leerGmail, enviarGmail } = require('./google/gmail');
+const { leerCalendar, crearEvento } = require('./google/calendar');
+const { buscarDrive } = require('./google/drive');
+
+// ── Sets de inyección de userId ───────────────────────────────────────────────
+// FILE_TOOLS: generan archivos en disco — userId prefija el nombre (anti-IDOR)
+const FILE_TOOLS = new Set(['generar_excel', 'generar_word']);
+
+// USER_TOOLS: necesitan userId pero no generan archivos (Google + búsqueda + análisis)
+const USER_TOOLS = new Set([
+  'leer_gmail',
+  'enviar_gmail',
+  'leer_calendar',
+  'crear_evento',
+  'buscar_drive',
+  'buscar_web',
+  'generar_presentacion',
+  'analizar_documento',
+  'analizar_excel_basico',
+  'analizar_excel_avanzado',
+]);
+
+// ── Mapa de despacho ──────────────────────────────────────────────────────────
 const mapaTools = {
-  buscar_precios: buscarPreciosSeguro,
-  leer_correos: leerNoLeidosSeguro,
-  buscar_correos: buscarCorreosSeguro,
-  enviar_correo: enviarCorreoSeguro,
-  listar_eventos: listarEventosSeguro,
-  crear_evento: crearEventoSeguro,
-  eliminar_evento: eliminarEventoSeguro,
-  subir_archivo: subirArchivoSeguro,
   generar_excel: generarExcel,
-  generar_excel_comparacion: generarExcelComparacion,
   generar_word: generarWord,
-  generar_presentacion: generarPresentacionSegura,
-  buscar_contactos: buscarContactosSeguro,
+  analizar_documento: analizarDocumento,
+  analizar_excel_basico: analizarExcelBasico,
+  leer_gmail: leerGmail,
+  enviar_gmail: enviarGmail,
+  leer_calendar: leerCalendar,
+  crear_evento: crearEvento,
+  buscar_drive: buscarDrive,
+  analizar_excel_avanzado: analizarExcelAvanzado,
+  generar_presentacion: generarPresentacion,
+  buscar_web: buscarWeb,
+  buscar_normativa: buscarNormativa,
+  buscar_ordenanzas: buscarOrdenanzas,
 };
 
 /**
@@ -67,15 +88,17 @@ const mapaTools = {
  *
  * @param {string} nombre - Nombre de la tool (debe coincidir con TOOLS[].name)
  * @param {Object} params - Parámetros de la tool
- * @param {string} userId - ID del usuario autenticado (se inyecta en FILE_TOOLS)
+ * @param {string} userId - ID del usuario autenticado
  * @returns {Promise<any>}
  * @throws {AppError} code: 'TOOL_NOT_FOUND'
  */
 async function ejecutarTool(nombre, params, userId) {
   const fn = mapaTools[nombre];
   if (!fn) throw new AppError(`Tool desconocida: ${nombre}`, 'TOOL_NOT_FOUND', 400);
-  const inputParams = FILE_TOOLS.has(nombre) ? { ...params, userId } : params;
-  return fn(inputParams);
+
+  if (FILE_TOOLS.has(nombre)) return fn({ ...params, userId });
+  if (USER_TOOLS.has(nombre)) return fn({ ...params, userId });
+  return fn(params);
 }
 
 module.exports = { TOOLS, ejecutarTool };

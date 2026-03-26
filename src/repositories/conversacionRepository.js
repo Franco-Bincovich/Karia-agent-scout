@@ -15,7 +15,7 @@ const logger = require('../utils/logger').child({ module: 'conversacionRepositor
  */
 async function findByUser(userId, limite = 20) {
   const { data, error } = await supabase
-    .from('conversaciones_old')
+    .from('conversaciones-escobar')
     .select('id, titulo, created_at, updated_at')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false })
@@ -37,7 +37,7 @@ async function findByUser(userId, limite = 20) {
  */
 async function findById(id, userId) {
   const { data, error } = await supabase
-    .from('conversaciones_old')
+    .from('conversaciones-escobar')
     .select('*')
     .eq('id', id)
     .eq('user_id', userId)
@@ -59,7 +59,7 @@ async function findById(id, userId) {
  */
 async function create(userId, titulo) {
   const { data, error } = await supabase
-    .from('conversaciones_old')
+    .from('conversaciones-escobar')
     .insert({ user_id: userId, titulo: titulo || null, messages: [] })
     .select()
     .single();
@@ -82,7 +82,7 @@ async function create(userId, titulo) {
  */
 async function updateMessages(id, messages, userId) {
   const { data, error } = await supabase
-    .from('conversaciones_old')
+    .from('conversaciones-escobar')
     .update({ messages, updated_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', userId)
@@ -108,7 +108,7 @@ async function updateMessages(id, messages, userId) {
  */
 async function update(id, campos) {
   const { data, error } = await supabase
-    .from('conversaciones_old')
+    .from('conversaciones-escobar')
     .update({ ...campos, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()

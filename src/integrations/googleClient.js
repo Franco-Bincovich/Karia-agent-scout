@@ -1,65 +1,88 @@
 // integrations/googleClient.js
-// Cliente OAuth2 de Google. Punto de entrada único para todas las herramientas Google.
-// Lee credenciales desde config — nunca desde process.env directamente (Base 3).
+// Crea un cliente OAuth2 autenticado para un usuario.
+// Maneja refresh automático y persiste los nuevos tokens en Supabase.
 
 const { google } = require('googleapis');
 const config = require('../config');
 const { AppError } = require('../middleware/errorHandler');
+const integracionService = require('../services/integracionService');
 const logger = require('../utils/logger').child({ module: 'googleClient' });
 
+const SERVICIOS_GOOGLE = ['gmail', 'drive', 'calendar'];
+
 /**
- * Retorna un cliente OAuth2 autenticado para la cuenta especificada.
- * Las credenciales se leen desde config.google.cuentaN (vienen del .env vía config/).
+ * Devuelve un cliente OAuth2 autenticado y listo para usar.
+ * Refresca el access_token automáticamente si expiró.
  *
- * @param {1|2} numeroCuenta - Número de cuenta Google a usar (1 o 2)
- * @returns {import('googleapis').Auth.OAuth2Client} cliente listo para usar
- * @throws {AppError} code: 'GOOGLE_ACCOUNT_NOT_FOUND' (404) si la cuenta no existe
- * @throws {AppError} code: 'GOOGLE_AUTH_ERROR' (500) si faltan credenciales
+ * @param {string} userId
+ * @param {'gmail'|'drive'|'calendar'} tipo - servicio que se va a usar
+ * @returns {Promise<import('googleapis').Auth.OAuth2Client>}
+ * @throws {AppError} GOOGLE_NOT_CONNECTED | GOOGLE_CREDENTIALS_MISSING | GOOGLE_TOKEN_EXPIRED
  */
-function getGoogleClient(numeroCuenta = 1) {
-  const cuentas = {
-    1: config.google.cuenta1,
-    2: config.google.cuenta2,
-  };
-
-  const cuenta = cuentas[numeroCuenta];
-
-  if (!cuenta) {
-    throw new AppError(
-      `Cuenta Google ${numeroCuenta} no existe`,
-      'GOOGLE_ACCOUNT_NOT_FOUND',
-      404
-    );
-  }
-
-  if (!cuenta.clientId || !cuenta.clientSecret || !cuenta.refreshToken) {
-    throw new AppError(
-      `Credenciales incompletas para cuenta Google ${numeroCuenta}`,
-      'GOOGLE_AUTH_ERROR',
-      500
-    );
-  }
-
+async function getGoogleClient(userId, tipo) {
+  let creds;
   try {
-    const auth = new google.auth.OAuth2(
-      cuenta.clientId,
-      cuenta.clientSecret,
-      config.google.redirectUri
-    );
-
-    auth.setCredentials({ refresh_token: cuenta.refreshToken });
-
-    logger.info('Cliente Google creado', { numeroCuenta });
-
-    return auth;
+    creds = await integracionService.getCredenciales(userId, tipo);
   } catch (err) {
-    logger.error('Error al crear cliente Google', { numeroCuenta, error: err.message });
+    if (err.code === 'INTEGRACION_NOT_FOUND' || err.code === 'INTEGRACION_INACTIVA') {
+      throw new AppError(
+        `Google ${tipo} no está conectado. Conectá tu cuenta desde la sección Integraciones del menú.`,
+        'GOOGLE_NOT_CONNECTED',
+        400
+      );
+    }
+    throw err;
+  }
+
+  const clientId = config.google.clientId;
+  const clientSecret = config.google.clientSecret;
+
+  if (!clientId || !clientSecret) {
     throw new AppError(
-      `Error al autenticar cuenta Google ${numeroCuenta}`,
-      'GOOGLE_AUTH_ERROR',
-      500
+      'Configurá las credenciales de Google Cloud Console en la sección Integraciones.',
+      'GOOGLE_CREDENTIALS_MISSING',
+      400
     );
   }
+
+  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, config.google.redirectUri);
+  const expiry = creds.expiry ? parseInt(creds.expiry, 10) : null;
+  const expirado = expiry && Date.now() >= expiry - 60_000;
+
+  if (expirado && creds.refresh_token) {
+    try {
+      oauth2Client.setCredentials({ refresh_token: creds.refresh_token });
+      const { credentials } = await oauth2Client.refreshAccessToken();
+
+      // Persistir token nuevo en todos los servicios Google del usuario
+      await Promise.allSettled(
+        SERVICIOS_GOOGLE.map((s) =>
+          integracionService.guardarTokenGoogle(userId, s, {
+            access_token: credentials.access_token,
+            refresh_token: credentials.refresh_token || creds.refresh_token,
+            expiry: credentials.expiry_date,
+          })
+        )
+      );
+
+      oauth2Client.setCredentials(credentials);
+      logger.info('Token Google refrescado', { userId, tipo });
+    } catch (_) {
+      throw new AppError(
+        'La sesión de Google expiró. Volvé a conectar tu cuenta desde Integraciones.',
+        'GOOGLE_TOKEN_EXPIRED',
+        401
+      );
+    }
+  } else {
+    oauth2Client.setCredentials({
+      access_token: creds.access_token,
+      refresh_token: creds.refresh_token,
+      expiry_date: expiry,
+    });
+  }
+
+  return oauth2Client;
 }
 
 module.exports = { getGoogleClient };

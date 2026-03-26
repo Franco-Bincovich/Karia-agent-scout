@@ -18,7 +18,7 @@ module.exports = {
 
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY,
-    model: 'claude-haiku-4-5',
+    model: 'claude-sonnet-4-5',
   },
 
   supabase: {
@@ -27,21 +27,10 @@ module.exports = {
   },
 
   google: {
-    cuenta1: {
-      clientId: process.env.GOOGLE_CLIENT_ID_1,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET_1,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN_1,
-    },
-    cuenta2: {
-      clientId: process.env.GOOGLE_CLIENT_ID_2,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET_2,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN_2,
-    },
-    redirectUri: process.env.GOOGLE_REDIRECT_URI,
-  },
-
-  gamma: {
-    apiKey: process.env.GAMMA_API_KEY,
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri:
+      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3003/api/integraciones/google/callback',
   },
 
   rateLimit: {

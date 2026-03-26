@@ -28,3 +28,7 @@ body {
 
 button { font-family: var(--font); font-weight: 500; cursor: pointer; }
 input  { font-family: var(--font); }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

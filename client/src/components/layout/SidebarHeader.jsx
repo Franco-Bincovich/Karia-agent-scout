@@ -33,7 +33,7 @@ export default function SidebarHeader({ expandido, onToggle }) {
           <span style={{ fontSize: '20px', fontWeight: 600, fontFamily: 'var(--font)' }}>
             <span style={{ color: 'var(--color-white)' }}>kar</span>
             <span style={{ color: 'var(--color-teal)' }}>IA</span>
-            <span style={{ color: 'var(--color-white)' }}> Scout</span>
+            <span style={{ color: 'var(--color-white)' }}> Escobar</span>
           </span>
         </div>
       )}

@@ -67,7 +67,7 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await authApi.login(email, password);
-      login(data.token, data.user);
+      login(data.token, data.user);  // guarda en localStorage + setea estado
       navigate('/chat', { replace: true });
     } catch (err) {
       setError(err.message || 'Credenciales incorrectas');

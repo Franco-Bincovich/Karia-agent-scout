@@ -1,101 +1,49 @@
 // tools/gamma.js
-// Integración con Gamma AI para generación de presentaciones.
+// Generación de presentaciones y documentos con Gamma AI.
 
-const config = require('../config');
 const { AppError } = require('../middleware/errorHandler');
+const integracionService = require('../services/integracionService');
+const { generarPresentacionGamma } = require('../integrations/gammaClient');
+const { withCircuitBreaker } = require('../utils/circuitBreaker');
+const { withRetry } = require('../utils/reintentos');
 const logger = require('../utils/logger').child({ module: 'gamma' });
 
-const GAMMA_API_BASE = 'https://api.gamma.app/api';
-const POLL_INTERVAL_MS = 3000;
-const POLL_MAX_INTENTOS = 20;
+const soloTransitorios = (err) => !err.isOperational;
 
 /**
- * Llama a la API de Gamma y retorna el generationId.
+ * Genera una presentación, documento o página web usando Gamma AI.
+ * Requiere que el usuario tenga la integración 'gamma' activa.
  *
- * @param {string} titulo
- * @param {string} contenido
- * @returns {Promise<string>} generationId
+ * @param {{ userId: string, titulo: string, contenido: string, formato?: string }} params
+ * @returns {Promise<{ url: string, titulo: string }>}
+ * @throws {AppError} GAMMA_NOT_CONNECTED | GAMMA_API_ERROR
  */
-async function iniciarGeneracion(titulo, contenido) {
-  const res = await fetch(`${GAMMA_API_BASE}/generate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${config.gamma.apiKey}`,
-    },
-    body: JSON.stringify({
-      inputText: `${titulo}\n\n${contenido}`,
-      format: 'presentation',
-      textOptions: { language: 'es' },
-    }),
-  });
-
-  if (!res.ok) {
-    const texto = await res.text();
-    throw new Error(`Gamma generate HTTP ${res.status}: ${texto}`);
-  }
-
-  const data = await res.json();
-  if (!data.generationId) throw new Error('Gamma no retornó generationId');
-  return data.generationId;
-}
-
-/**
- * Consulta el estado de una generación y retorna la URL cuando esté lista.
- *
- * @param {string} generationId
- * @returns {Promise<string>} gammaUrl
- */
-async function esperarGeneracion(generationId) {
-  for (let i = 0; i < POLL_MAX_INTENTOS; i++) {
-    // eslint-disable-next-line no-await-in-loop
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-
-    // eslint-disable-next-line no-await-in-loop
-    const res = await fetch(`${GAMMA_API_BASE}/generate/${generationId}`, {
-      headers: { Authorization: `Bearer ${config.gamma.apiKey}` },
-    });
-
-    if (!res.ok) throw new Error(`Gamma status HTTP ${res.status}`);
-
-    // eslint-disable-next-line no-await-in-loop
-    const data = await res.json();
-
-    if (data.status === 'completed' && data.gammaUrl) {
-      return data.gammaUrl;
-    }
-
-    if (data.status === 'failed') {
-      throw new Error(`Gamma generation failed: ${data.error || 'sin detalle'}`);
-    }
-
-    logger.info('Gamma generando...', { generationId, intento: i + 1, status: data.status });
-  }
-
-  throw new Error('Timeout esperando generación de Gamma');
-}
-
-/**
- * Genera una presentación usando Gamma AI.
- *
- * @param {{ titulo: string, contenido: string }} params
- * @returns {Promise<{ url: string, gammaId: string }>}
- * @throws {AppError} code: 'GAMMA_ERROR'
- */
-async function generarPresentacion({ titulo, contenido }) {
+async function _generarPresentacion({ userId, titulo, contenido, formato = 'presentacion' }) {
+  let creds;
   try {
-    logger.info('Iniciando generación Gamma', { titulo });
-
-    const generationId = await iniciarGeneracion(titulo, contenido);
-    const url = await esperarGeneracion(generationId);
-
-    logger.info('Presentación Gamma generada', { generationId, url });
-    return { url, gammaId: generationId };
+    creds = await integracionService.getCredenciales(userId, 'gamma');
   } catch (err) {
-    if (err.isOperational) throw err;
-    logger.error('Error en Gamma', { error: err.message });
-    throw new AppError(`Error al generar presentación: ${err.message}`, 'GAMMA_ERROR', 500);
+    if (err.code === 'INTEGRACION_NOT_FOUND' || err.code === 'INTEGRACION_INACTIVA') {
+      throw new AppError(
+        'Conectá tu cuenta de Gamma desde Integraciones para generar presentaciones.',
+        'GAMMA_NOT_CONNECTED',
+        400
+      );
+    }
+    throw err;
   }
+
+  logger.info('Generando presentación Gamma', { userId, titulo, formato });
+  return generarPresentacionGamma(creds.api_key, { titulo, contenido, formato });
 }
+
+const generarPresentacion = withCircuitBreaker(
+  withRetry(_generarPresentacion, {
+    maxIntentos: 2,
+    delayBase: 2_000,
+    shouldRetry: soloTransitorios,
+  }),
+  { maxFallos: 3, cooldownMs: 60_000, nombre: 'gamma-generar' }
+);
 
 module.exports = { generarPresentacion };

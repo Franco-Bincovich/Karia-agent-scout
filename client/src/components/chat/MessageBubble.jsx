@@ -39,7 +39,8 @@ const mdComponents = {
 };
 
 export default function MessageBubble({ mensaje }) {
-  const esUsuario = mensaje.rol === 'user';
+  const esUsuario = mensaje.role === 'user';
+  const texto = typeof mensaje.content === 'string' ? mensaje.content : '';
 
   return (
     <div style={{
@@ -58,11 +59,11 @@ export default function MessageBubble({ mensaje }) {
         boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
       }}>
         {esUsuario ? (
-          <span>{mensaje.texto}</span>
+          <span>{texto}</span>
         ) : (
           <>
-            <ReactMarkdown components={mdComponents}>{mensaje.texto}</ReactMarkdown>
-            <BubbleActions texto={mensaje.texto} />
+            <ReactMarkdown components={mdComponents}>{texto}</ReactMarkdown>
+            <BubbleActions texto={texto} />
           </>
         )}
         <div style={{

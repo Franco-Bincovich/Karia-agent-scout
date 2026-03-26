@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"const { google } = require\\(''googleapis''\\); console.log\\(''OK'', require\\(''./node_modules/googleapis/package.json''\\).version\\)\")",
+      "Bash(node --check src/controllers/integracionController.js)",
+      "Bash(node --check src/routes/integracionRoutes.js)",
+      "Bash(node --check src/app.js)",
+      "Bash(node --check src/config/index.js)",
+      "Bash(node --check src/repositories/funcionalidadRepository.js)",
+      "Bash(node --check src/services/funcionalidadService.js)",
+      "Bash(node --check src/controllers/funcionalidadController.js)",
+      "Bash(node --check src/routes/funcionalidadRoutes.js)",
+      "Bash(node --check src/agent.js)",
+      "Bash(node --check \"C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src\\\\agent.js\")",
+      "Bash(node --check \"C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src\\\\controllers\\\\chatController.js\")",
+      "Bash(node --check \"C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src\\\\routes\\\\chatRoutes.js\")",
+      "Bash(grep -E \"\\\\.js$|^d\")",
+      "Bash(node -e \"const pkg = require\\(''./package.json''\\); console.log\\(pkg.dependencies.cheerio\\)\")"
+    ]
+  }
+}

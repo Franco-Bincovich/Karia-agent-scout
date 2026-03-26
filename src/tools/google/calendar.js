@@ -1,100 +1,114 @@
 // tools/google/calendar.js
-// Herramientas de Google Calendar para el agente Claude.
+// Herramientas Calendar: listar eventos próximos y crear evento.
 
 const { google } = require('googleapis');
-const { getGoogleClient } = require('./auth');
-const { AppError } = require('../../middleware/errorHandler');
+const { getGoogleClient } = require('../../integrations/googleClient');
+const { withCircuitBreaker } = require('../../utils/circuitBreaker');
+const { withRetry } = require('../../utils/reintentos');
 const logger = require('../../utils/logger').child({ module: 'calendar' });
 
+const TZ = 'America/Argentina/Buenos_Aires';
+const soloTransitorios = (err) => !err.isOperational && (!err.code || err.code >= 500);
+
+// ── leerCalendar ─────────────────────────────────────────────────────────────
+
 /**
- * Lista eventos del calendario principal de la cuenta.
+ * Lista los eventos de los próximos N días en el calendario principal.
  *
- * @param {{ numeroCuenta?: number, desde?: string, hasta?: string, maxResults?: number }} params
- * @returns {Promise<Object[]>} array de { id, summary, start, end, location }
- * @throws {AppError} code: 'CALENDAR_ERROR'
+ * @param {{ userId: string, dias?: number }} params
+ * @returns {Promise<Array<{ id, titulo, fecha, hora, lugar, descripcion }>>}
  */
-async function listarEventos({ numeroCuenta = 1, desde, hasta, maxResults = 10 }) {
-  try {
-    const auth = getGoogleClient(numeroCuenta);
-    const calendar = google.calendar({ version: 'v3', auth });
+async function _leerCalendar({ userId, dias = 7 }) {
+  const auth = await getGoogleClient(userId, 'calendar');
+  const calendar = google.calendar({ version: 'v3', auth });
 
-    const params = {
-      calendarId: 'primary',
-      maxResults,
-      singleEvents: true,
-      orderBy: 'startTime',
-      timeMin: desde || new Date().toISOString(),
+  const ahora = new Date();
+  const hasta = new Date(ahora.getTime() + Math.min(dias, 60) * 24 * 60 * 60 * 1000);
+
+  const res = await calendar.events.list({
+    calendarId: 'primary',
+    timeMin: ahora.toISOString(),
+    timeMax: hasta.toISOString(),
+    maxResults: 25,
+    singleEvents: true,
+    orderBy: 'startTime',
+  });
+
+  return (res.data.items || []).map((ev) => {
+    const inicio = ev.start?.dateTime || ev.start?.date || '';
+    const hora = ev.start?.dateTime
+      ? new Date(ev.start.dateTime).toLocaleTimeString('es-AR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: TZ,
+        })
+      : 'Todo el día';
+    const fecha = inicio.split('T')[0] || inicio;
+    return {
+      id: ev.id,
+      titulo: ev.summary || '(sin título)',
+      fecha,
+      hora,
+      lugar: ev.location || '',
+      descripcion: ev.description || '',
     };
-    if (hasta) params.timeMax = hasta;
-
-    const respuesta = await calendar.events.list(params);
-    const eventos = (respuesta.data.items || []).map((e) => ({
-      id: e.id,
-      summary: e.summary,
-      start: e.start.dateTime || e.start.date,
-      end: e.end.dateTime || e.end.date,
-      location: e.location || null,
-    }));
-
-    logger.info('Eventos listados', { numeroCuenta, cantidad: eventos.length });
-    return eventos;
-  } catch (err) {
-    if (err.isOperational) throw err;
-    logger.error('Error en listarEventos', { error: err.message });
-    throw new AppError('Error al listar eventos', 'CALENDAR_ERROR', 500);
-  }
+  });
 }
 
-/**
- * Crea un evento en el calendario principal de la cuenta.
- *
- * @param {{ numeroCuenta?: number, titulo: string, inicio: string, fin: string, descripcion?: string }} params
- * @returns {Promise<{ id: string, htmlLink: string }>}
- * @throws {AppError} code: 'CALENDAR_ERROR'
- */
-async function crearEvento({ numeroCuenta = 1, titulo, inicio, fin, descripcion }) {
-  try {
-    const auth = getGoogleClient(numeroCuenta);
-    const calendar = google.calendar({ version: 'v3', auth });
+// ── crearEvento ───────────────────────────────────────────────────────────────
 
-    const evento = {
+/**
+ * Crea un evento en el calendario principal del usuario.
+ *
+ * @param {{ userId: string, titulo: string, fecha: string, hora: string, duracionMinutos?: number, descripcion?: string }} params
+ * @returns {Promise<{ ok: boolean, id: string, titulo: string, inicio: string, url: string }>}
+ */
+async function _crearEvento({
+  userId,
+  titulo,
+  fecha,
+  hora,
+  duracionMinutos = 60,
+  descripcion = '',
+}) {
+  const auth = await getGoogleClient(userId, 'calendar');
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  const inicio = new Date(`${fecha}T${hora}:00`);
+  const fin = new Date(inicio.getTime() + duracionMinutos * 60 * 1000);
+
+  const res = await calendar.events.insert({
+    calendarId: 'primary',
+    requestBody: {
       summary: titulo,
-      description: descripcion || '',
-      start: { dateTime: inicio },
-      end: { dateTime: fin },
-    };
+      description: descripcion,
+      start: { dateTime: inicio.toISOString(), timeZone: TZ },
+      end: { dateTime: fin.toISOString(), timeZone: TZ },
+    },
+  });
 
-    const respuesta = await calendar.events.insert({ calendarId: 'primary', requestBody: evento });
-
-    logger.info('Evento creado', { numeroCuenta, titulo, id: respuesta.data.id });
-    return { id: respuesta.data.id, htmlLink: respuesta.data.htmlLink };
-  } catch (err) {
-    if (err.isOperational) throw err;
-    logger.error('Error en crearEvento', { error: err.message });
-    throw new AppError('Error al crear evento', 'CALENDAR_ERROR', 500);
-  }
+  logger.info('Evento creado', { userId, titulo, fecha });
+  return {
+    ok: true,
+    id: res.data.id,
+    titulo: res.data.summary,
+    inicio: res.data.start?.dateTime,
+    url: res.data.htmlLink || '',
+  };
 }
 
-/**
- * Elimina un evento del calendario principal de la cuenta.
- *
- * @param {{ numeroCuenta?: number, eventId: string }} params
- * @returns {Promise<void>}
- * @throws {AppError} code: 'CALENDAR_ERROR'
- */
-async function eliminarEvento({ numeroCuenta = 1, eventId }) {
-  try {
-    const auth = getGoogleClient(numeroCuenta);
-    const calendar = google.calendar({ version: 'v3', auth });
+// ── Export con resilencia ────────────────────────────────────────────────────
 
-    await calendar.events.delete({ calendarId: 'primary', eventId });
+const cbOpts = { maxFallos: 3, cooldownMs: 20_000 };
+const retOpts = { maxIntentos: 2, delayBase: 1_000, shouldRetry: soloTransitorios };
 
-    logger.info('Evento eliminado', { numeroCuenta, eventId });
-  } catch (err) {
-    if (err.isOperational) throw err;
-    logger.error('Error en eliminarEvento', { error: err.message });
-    throw new AppError('Error al eliminar evento', 'CALENDAR_ERROR', 500);
-  }
-}
+const leerCalendar = withCircuitBreaker(withRetry(_leerCalendar, retOpts), {
+  ...cbOpts,
+  nombre: 'calendar-leer',
+});
+const crearEvento = withCircuitBreaker(withRetry(_crearEvento, retOpts), {
+  ...cbOpts,
+  nombre: 'calendar-crear',
+});
 
-module.exports = { listarEventos, crearEvento, eliminarEvento };
+module.exports = { leerCalendar, crearEvento };

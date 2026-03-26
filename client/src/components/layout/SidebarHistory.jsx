@@ -1,47 +1,43 @@
 // components/layout/SidebarHistory.jsx
-// Lista de conversaciones previas del usuario (últimas 10).
+// Lista de conversaciones previas (últimas 10), usada dentro del accordion CONVERSACIONES.
 
 import { useState, useEffect } from 'react';
 import { conversacionesApi } from '../../services/api';
 
+const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i;
+
+function tituloValido(conv) {
+  if (!conv.titulo) return false;
+  if (RE_UUID.test(conv.titulo)) return false;
+  return true;
+}
+
 /**
- * @param {{ expandido: boolean, token: string|null, onSeleccionar: (id: string) => void }} props
+ * @param {{ token: string|null, onSeleccionar: (id: string) => void }} props
  */
-export default function SidebarHistory({ expandido, token, onSeleccionar }) {
+export default function SidebarHistory({ token, onSeleccionar }) {
   const [conversaciones, setConversaciones] = useState([]);
 
   useEffect(() => {
     if (!token) return;
     conversacionesApi.listar(token)
-      .then((data) => setConversaciones((data.conversaciones || []).slice(0, 10)))
+      .then((data) => setConversaciones(
+        (data.conversaciones || []).filter(tituloValido).slice(0, 10)
+      ))
       .catch(() => setConversaciones([]));
   }, [token]);
 
-  if (!expandido) {
-    return (
-      <div style={{ padding: '0.75rem 0', textAlign: 'center' }}>
-        <span style={{ fontSize: '18px', color: 'var(--color-gris)' }}>💬</span>
-      </div>
-    );
-  }
+  if (conversaciones.length === 0) return null;
 
   return (
-    <div style={{ padding: '0.5rem', flex: 1, overflowY: 'auto' }}>
-      <div style={{ color: 'var(--color-gris)', fontSize: '11px', padding: '0.25rem 0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        Historial
-      </div>
-      {conversaciones.length === 0 && (
-        <div style={{ color: 'var(--color-gris)', fontSize: '13px', padding: '0.5rem' }}>
-          Sin conversaciones previas
-        </div>
-      )}
+    <div>
       {conversaciones.map((conv) => (
         <button
           key={conv.id}
           onClick={() => onSeleccionar(conv.id)}
           style={{
             display: 'block', width: '100%', textAlign: 'left',
-            padding: '0.5rem 0.5rem', background: 'transparent', border: 'none',
+            padding: '0.45rem 1rem', background: 'transparent', border: 'none',
             color: 'var(--color-white)', fontSize: '13px', fontFamily: 'var(--font)',
             borderRadius: 'var(--border-radius)', cursor: 'pointer',
             transition: 'background 0.2s', overflow: 'hidden',

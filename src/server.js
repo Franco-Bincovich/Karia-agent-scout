@@ -8,7 +8,7 @@ const logger = require('./utils/logger').child({ module: 'server' });
 require('./utils/limpiarTmp');
 
 const server = app.listen(config.port, () => {
-  logger.info(`KarIA Scout corriendo`, { port: config.port, env: config.env });
+  logger.info(`KarIA Escobar corriendo`, { port: config.port, env: config.env });
 });
 
 // Graceful shutdown — cierra conexiones activas antes de salir
@@ -24,7 +24,9 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 process.on('unhandledRejection', (reason) => {
-  logger.error('unhandledRejection', { error: reason instanceof Error ? reason.message : String(reason) });
+  logger.error('unhandledRejection', {
+    error: reason instanceof Error ? reason.message : String(reason),
+  });
 });
 
 process.on('uncaughtException', (err) => {

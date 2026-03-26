@@ -1,0 +1,70 @@
+// services/funcionalidadService.js
+// Lógica de negocio para funcionalidades del agente.
+// buildSystemPrompt es el contrato principal con agent.js.
+
+const { AppError } = require('../middleware/errorHandler');
+const funcionalidadRepo = require('../repositories/funcionalidadRepository');
+const logger = require('../utils/logger').child({ module: 'funcionalidadService' });
+
+/**
+ * Lista las funcionalidades activas de un usuario.
+ *
+ * @param {string} userId
+ * @returns {Promise<Object[]>}
+ */
+async function listar(userId) {
+  return funcionalidadRepo.findAllByUser(userId);
+}
+
+/**
+ * Crea una nueva funcionalidad para un usuario.
+ *
+ * @param {string} userId
+ * @param {{ nombre: string, descripcion?: string, system_prompt: string }} datos
+ * @returns {Promise<Object>}
+ * @throws {AppError} code: 'SYSTEM_PROMPT_REQUERIDO'
+ */
+async function crear(userId, { nombre, descripcion, system_prompt }) {
+  if (!system_prompt || !system_prompt.trim()) {
+    throw new AppError('El system prompt no puede estar vacío', 'SYSTEM_PROMPT_REQUERIDO', 400);
+  }
+
+  const row = await funcionalidadRepo.create(userId, {
+    nombre: nombre.trim(),
+    descripcion: descripcion?.trim() || null,
+    system_prompt: system_prompt.trim(),
+  });
+
+  logger.info('Funcionalidad creada', { userId, id: row.id, nombre: row.nombre });
+  return row;
+}
+
+/**
+ * Activa o desactiva una funcionalidad.
+ *
+ * @param {string} id
+ * @param {string} userId
+ * @returns {Promise<Object>}
+ */
+async function toggleActivo(id, userId) {
+  const row = await funcionalidadRepo.toggleActivo(id, userId);
+  logger.info('Funcionalidad toggled', { userId, id, activo: row.activo });
+  return row;
+}
+
+/**
+ * Construye el system prompt dinámico combinando las funcionalidades activas del usuario.
+ * Devuelve null si no hay funcionalidades activas — el agente usará el prompt base como fallback.
+ * Uso exclusivo de agent.js, nunca exponer al frontend.
+ *
+ * @param {string} userId
+ * @returns {Promise<string|null>}
+ */
+async function buildSystemPrompt(userId) {
+  const funcionalidades = await funcionalidadRepo.findByUser(userId);
+  if (funcionalidades.length === 0) return null;
+
+  return funcionalidades.map((f) => `=== ${f.nombre} ===\n${f.system_prompt}`).join('\n\n');
+}
+
+module.exports = { listar, crear, toggleActivo, buildSystemPrompt };

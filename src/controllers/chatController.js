@@ -4,7 +4,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const config = require('../config');
 const { AppError } = require('../middleware/errorHandler');
-const { ejecutarAgente } = require('../agent');
+const { ejecutarAgente, ejecutarAgenteConfigurador } = require('../agent');
 const cola = require('../utils/cola');
 const conversacionRepo = require('../repositories/conversacionRepository');
 const logger = require('../utils/logger').child({ module: 'chatController' });
@@ -130,12 +130,35 @@ async function cargarConversacion(req, res, next) {
       throw new AppError('Conversación no encontrada', 'CONVERSACION_NOT_FOUND', 404);
     }
 
-    const mensajes = (conversacion.messages || []).map((m) => ({
-      id: m.id || null,
-      rol: m.role === 'user' ? 'user' : 'agent',
-      texto: m.content,
-      timestamp: m.timestamp || conversacion.updated_at,
-    }));
+    // Extrae texto de un content que puede ser string o array de bloques Anthropic.
+    function extraerTexto(content) {
+      if (typeof content === 'string') return content;
+      if (Array.isArray(content)) {
+        return content
+          .filter((b) => b.type === 'text')
+          .map((b) => b.text)
+          .join('');
+      }
+      return '';
+    }
+
+    const mensajes = (conversacion.messages || [])
+      .filter((m) => {
+        // Descartar mensajes de tool: role 'user' con content array (tool_result)
+        // y role 'assistant' con content array que no tiene bloques de texto (puro tool_use)
+        if (m.role !== 'user' && m.role !== 'assistant') return false;
+        if (Array.isArray(m.content)) {
+          const tieneTexto = m.content.some((b) => b.type === 'text');
+          return tieneTexto;
+        }
+        return typeof m.content === 'string' && m.content.length > 0;
+      })
+      .map((m) => ({
+        id: m.id || null,
+        rol: m.role === 'user' ? 'user' : 'agent',
+        texto: extraerTexto(m.content),
+        timestamp: m.timestamp || conversacion.updated_at,
+      }));
 
     res.json({ conversacion: { id: conversacion.id, titulo: conversacion.titulo }, mensajes });
   } catch (err) {
@@ -143,4 +166,19 @@ async function cargarConversacion(req, res, next) {
   }
 }
 
-module.exports = { chat, listarConversaciones, cargarConversacion };
+/**
+ * POST /api/chat/configurador
+ * Body: { mensaje: string, historial?: Array<{role,content}> }
+ * Sin persistencia — el historial vive en memoria del frontend.
+ */
+async function chatConfigurador(req, res, next) {
+  try {
+    const { mensaje, historial = [] } = req.body;
+    const { respuesta } = await ejecutarAgenteConfigurador({ mensaje, historial });
+    res.json({ respuesta });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { chat, listarConversaciones, cargarConversacion, chatConfigurador };

@@ -3,38 +3,13 @@
 // Las credenciales se cifran con AES-256-CBC antes de persistir y nunca
 // se exponen al frontend — solo el agente las consume via getCredenciales().
 
-const crypto = require('crypto');
-const config = require('../config');
 const { AppError } = require('../middleware/errorHandler');
 const integracionRepo = require('../repositories/integracionRepository');
+const { cifrar, descifrar } = require('../utils/crypto');
 const logger = require('../utils/logger').child({ module: 'integracionService' });
 
-const ALGORITHM = 'aes-256-cbc';
-const IV_LENGTH = 16;
 const TIPOS_API_KEY = ['anthropic', 'openai', 'perplexity', 'gamma'];
 const TIPOS_GOOGLE = ['gmail', 'drive', 'calendar'];
-
-// Deriva una clave de 32 bytes estable a partir del JWT_SECRET.
-function derivarClave() {
-  return crypto.scryptSync(config.jwt.secret, 'karia-escobar-integraciones', 32);
-}
-
-function cifrar(texto) {
-  const clave = derivarClave();
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv(ALGORITHM, clave, iv);
-  const cifrado = Buffer.concat([cipher.update(texto, 'utf8'), cipher.final()]);
-  return `${iv.toString('hex')}:${cifrado.toString('hex')}`;
-}
-
-function descifrar(valor) {
-  const [ivHex, textoHex] = valor.split(':');
-  const clave = derivarClave();
-  const decipher = crypto.createDecipheriv(ALGORITHM, clave, Buffer.from(ivHex, 'hex'));
-  return Buffer.concat([decipher.update(Buffer.from(textoHex, 'hex')), decipher.final()]).toString(
-    'utf8'
-  );
-}
 
 /**
  * Lista las integraciones activas de un usuario sin exponer credenciales.

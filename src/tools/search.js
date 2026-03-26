@@ -95,21 +95,21 @@ async function _buscarWeb({ userId, query, maxResultados = 5 }) {
 async function scrapeInfoleg(query) {
   const url = `https://servicios.infoleg.gob.ar/infolegInternet/buscar.do?s=${encodeURIComponent(query)}`;
   const html = await fetchHtml(url);
-  const $ = load(html);
+  const $html = load(html);
   const resultados = [];
 
   // Infoleg usa tabla con clase "tabla-resultado" o filas con datos de normas
-  $('table tr').each((_, fila) => {
-    const celdas = $(fila).find('td');
+  $html('table tr').each((_, fila) => {
+    const celdas = $html(fila).find('td');
     if (celdas.length < 3) return;
-    const enlace = $(celdas[0]).find('a');
-    const titulo = enlace.text().trim() || $(celdas[0]).text().trim();
+    const enlace = $html(celdas[0]).find('a');
+    const titulo = enlace.text().trim() || $html(celdas[0]).text().trim();
     const href = enlace.attr('href') || '';
     if (!titulo) return;
     resultados.push({
       titulo,
-      organismo: $(celdas[1]).text().trim() || 'Infoleg',
-      fecha: $(celdas[2]).text().trim() || '',
+      organismo: $html(celdas[1]).text().trim() || 'Infoleg',
+      fecha: $html(celdas[2]).text().trim() || '',
       url: href.startsWith('http') ? href : `https://servicios.infoleg.gob.ar${href}`,
     });
   });
@@ -120,15 +120,15 @@ async function scrapeInfoleg(query) {
 async function scrapeSAIJ(query) {
   const url = `https://www.saij.gob.ar/busqueda?q=${encodeURIComponent(query)}`;
   const html = await fetchHtml(url);
-  const $ = load(html);
+  const $html = load(html);
   const resultados = [];
 
   // SAIJ usa divs con clase "resultado" o "documento"
-  $('.resultado, .documento, [class*="resultado"]').each((_, el) => {
-    const enlace = $(el).find('a').first();
-    const titulo = enlace.text().trim() || $(el).find('h3, h4, strong').first().text().trim();
+  $html('.resultado, .documento, [class*="resultado"]').each((_, el) => {
+    const enlace = $html(el).find('a').first();
+    const titulo = enlace.text().trim() || $html(el).find('h3, h4, strong').first().text().trim();
     const href = enlace.attr('href') || '';
-    const meta = $(el).find('.fecha, [class*="fecha"], time').first().text().trim();
+    const meta = $html(el).find('.fecha, [class*="fecha"], time').first().text().trim();
     if (!titulo) return;
     resultados.push({
       titulo,
@@ -176,12 +176,12 @@ async function _buscarOrdenanzas({ query }) {
     html = await fetchHtml(`${base}/ordenanzas?buscar=${encodeURIComponent(query)}`);
   }
 
-  const $ = load(html);
+  const $html = load(html);
   const resultados = [];
 
-  $('table tr, .ordenanza, [class*="ordenanza"], [class*="resultado"]').each((_, el) => {
-    const enlace = $(el).find('a').first();
-    const texto = enlace.text().trim() || $(el).text().trim();
+  $html('table tr, .ordenanza, [class*="ordenanza"], [class*="resultado"]').each((_, el) => {
+    const enlace = $html(el).find('a').first();
+    const texto = enlace.text().trim() || $html(el).text().trim();
     const href = enlace.attr('href') || '';
     if (!texto || texto.length < 4) return;
 
@@ -190,7 +190,7 @@ async function _buscarOrdenanzas({ query }) {
     resultados.push({
       numero: matchNro ? matchNro[0] : '',
       titulo: texto,
-      fecha: $(el).find('[class*="fecha"], time').first().text().trim() || '',
+      fecha: $html(el).find('[class*="fecha"], time').first().text().trim() || '',
       url: href.startsWith('http') ? href : href ? `${base}${href}` : url,
     });
   });

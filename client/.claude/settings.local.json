@@ -17,7 +17,12 @@
       "Bash(node --check \"C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src\\\\controllers\\\\chatController.js\")",
       "Bash(node --check \"C:\\\\Users\\\\Franco Bincovich\\\\Desktop\\\\Visual Code\\\\Karia-Agent\\\\Karia-Escobar\\\\src\\\\routes\\\\chatRoutes.js\")",
       "Bash(grep -E \"\\\\.js$|^d\")",
-      "Bash(node -e \"const pkg = require\\(''./package.json''\\); console.log\\(pkg.dependencies.cheerio\\)\")"
+      "Bash(node -e \"const pkg = require\\(''./package.json''\\); console.log\\(pkg.dependencies.cheerio\\)\")",
+      "Bash(find \"/c/Users/Franco Bincovich/Desktop/Visual Code/Karia-Agent/Karia-Escobar/src\" -name \"*.js\" -exec wc -l {} +)",
+      "Bash(grep -v \"//\")",
+      "Bash(npm audit:*)",
+      "Bash(node -e \":*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

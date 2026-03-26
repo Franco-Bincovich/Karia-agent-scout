@@ -34,10 +34,10 @@ async function _leerCalendar({ userId, dias = 7 }) {
     orderBy: 'startTime',
   });
 
-  return (res.data.items || []).map((ev) => {
-    const inicio = ev.start?.dateTime || ev.start?.date || '';
-    const hora = ev.start?.dateTime
-      ? new Date(ev.start.dateTime).toLocaleTimeString('es-AR', {
+  return (res.data.items || []).map((evento) => {
+    const inicio = evento.start?.dateTime || evento.start?.date || '';
+    const hora = evento.start?.dateTime
+      ? new Date(evento.start.dateTime).toLocaleTimeString('es-AR', {
           hour: '2-digit',
           minute: '2-digit',
           timeZone: TZ,
@@ -45,12 +45,12 @@ async function _leerCalendar({ userId, dias = 7 }) {
       : 'Todo el día';
     const fecha = inicio.split('T')[0] || inicio;
     return {
-      id: ev.id,
-      titulo: ev.summary || '(sin título)',
+      id: evento.id,
+      titulo: evento.summary || '(sin título)',
       fecha,
       hora,
-      lugar: ev.location || '',
-      descripcion: ev.description || '',
+      lugar: evento.location || '',
+      descripcion: evento.description || '',
     };
   });
 }

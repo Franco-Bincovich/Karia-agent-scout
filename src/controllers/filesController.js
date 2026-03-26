@@ -9,8 +9,8 @@ const logger = require('../utils/logger').child({ module: 'filesController' });
 const MIME = {
   '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  '.pdf':  'application/pdf',
-  '.csv':  'text/csv',
+  '.pdf': 'application/pdf',
+  '.csv': 'text/csv',
 };
 
 /**
@@ -31,7 +31,10 @@ async function descargarArchivo(req, res, next) {
     logger.info('Enviando archivo', { userId: req.user?.userId, nombreArchivo });
 
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename*=UTF-8''${encodeURIComponent(nombreArchivo)}`
+    );
     res.sendFile(rutaAbsoluta);
   } catch (err) {
     next(err);

@@ -4,6 +4,8 @@
 
 const { Router } = require('express');
 const { body, param } = require('express-validator');
+const rateLimit = require('express-rate-limit');
+const config = require('../config');
 const { verificarToken } = require('../middleware/auth');
 const manejarErroresValidacion = require('../middleware/manejarErroresValidacion');
 const {
@@ -18,6 +20,18 @@ const TIPOS_VALIDOS = ['anthropic', 'openai', 'gmail', 'drive', 'calendar'];
 
 const router = Router();
 
+const apiRateLimiter = rateLimit({
+  windowMs: config.rateLimit.api.windowMs,
+  max: config.rateLimit.api.max,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: true,
+    message: 'Demasiadas solicitudes, intentá de nuevo más tarde',
+    code: 'RATE_LIMIT_EXCEEDED',
+  },
+});
+
 // GET /api/integraciones
 router.get('/', verificarToken, listar);
 
@@ -25,6 +39,7 @@ router.get('/', verificarToken, listar);
 router.post(
   '/apikey',
   verificarToken,
+  apiRateLimiter,
   [
     body('tipo')
       .isIn(['anthropic', 'openai', 'perplexity', 'gamma'])
@@ -36,7 +51,7 @@ router.post(
 );
 
 // GET /api/integraciones/google/auth  (inicia flujo OAuth2)
-router.get('/google/auth', verificarToken, conectarGoogle);
+router.get('/google/auth', verificarToken, apiRateLimiter, conectarGoogle);
 
 // GET /api/integraciones/google/callback  (Google redirige aquí, sin JWT propio)
 router.get('/google/callback', callbackGoogle);

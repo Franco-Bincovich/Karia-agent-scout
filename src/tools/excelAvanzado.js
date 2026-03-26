@@ -36,6 +36,14 @@ function masFrequentes(valores, top = 3) {
 
 // ── Análisis de una hoja ──────────────────────────────────────────────────────
 
+/**
+ * Analiza una hoja de Excel y devuelve estadísticas por columna.
+ * La fila 1 se trata como encabezado. Detecta automáticamente si cada columna
+ * es numérica (mayoría de valores parseables como Number) o de texto.
+ *
+ * @param {import('exceljs').Worksheet} worksheet - Hoja a analizar
+ * @returns {{ nombre: string, filas: number, columnas: Array<{ nombre: string, estadisticas: Object }> }}
+ */
 function analizarHoja(worksheet) {
   const columnasData = new Map(); // colIdx → { nombre, numericos[], textos[], vacias }
 

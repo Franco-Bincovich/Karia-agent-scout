@@ -6,6 +6,21 @@ const { AppError } = require('../middleware/errorHandler');
 const funcionalidadRepo = require('../repositories/funcionalidadRepository');
 const logger = require('../utils/logger').child({ module: 'funcionalidadService' });
 
+// Patrones que indican intentos de prompt injection o jailbreak.
+const BLOCKLIST_PROMPT = [
+  /ignor[aá]/i,
+  /ignore/i,
+  /override/i,
+  /instrucciones anteriores/i,
+  /previous instructions/i,
+  /jailbreak/i,
+  /system.?prompt anterior/i,
+  /forget your instructions/i,
+  /nueva personalidad/i,
+  /act as/i,
+  /\bDAN\b/,
+];
+
 /**
  * Lista las funcionalidades activas de un usuario.
  *
@@ -27,6 +42,19 @@ async function listar(userId) {
 async function crear(userId, { nombre, descripcion, system_prompt }) {
   if (!system_prompt || !system_prompt.trim()) {
     throw new AppError('El system prompt no puede estar vacío', 'SYSTEM_PROMPT_REQUERIDO', 400);
+  }
+
+  const patronDetectado = BLOCKLIST_PROMPT.find((re) => re.test(system_prompt));
+  if (patronDetectado) {
+    logger.warn('Intento de prompt injection bloqueado', {
+      userId,
+      patron: patronDetectado.toString(),
+    });
+    throw new AppError(
+      'El system prompt contiene contenido no permitido',
+      'SYSTEM_PROMPT_INVALIDO',
+      400
+    );
   }
 
   const row = await funcionalidadRepo.create(userId, {

@@ -43,12 +43,12 @@ async function _buscarDrive({ userId, query }) {
   const archivos = res.data.files || [];
   logger.info('Búsqueda Drive', { userId, query, resultados: archivos.length });
 
-  return archivos.map((f) => ({
-    nombre: f.name,
-    tipo: MIME_LABELS[f.mimeType] || f.mimeType,
-    url: f.webViewLink || '',
-    modificado: f.modifiedTime
-      ? new Date(f.modifiedTime).toLocaleDateString('es-AR', {
+  return archivos.map((archivo) => ({
+    nombre: archivo.name,
+    tipo: MIME_LABELS[archivo.mimeType] || archivo.mimeType,
+    url: archivo.webViewLink || '',
+    modificado: archivo.modifiedTime
+      ? new Date(archivo.modifiedTime).toLocaleDateString('es-AR', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',

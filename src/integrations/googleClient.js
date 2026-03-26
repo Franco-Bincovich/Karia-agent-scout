@@ -55,7 +55,7 @@ async function getGoogleClient(userId, tipo) {
       const { credentials } = await oauth2Client.refreshAccessToken();
 
       // Persistir token nuevo en todos los servicios Google del usuario
-      await Promise.allSettled(
+      const resultados = await Promise.allSettled(
         SERVICIOS_GOOGLE.map((s) =>
           integracionService.guardarTokenGoogle(userId, s, {
             access_token: credentials.access_token,
@@ -64,6 +64,15 @@ async function getGoogleClient(userId, tipo) {
           })
         )
       );
+      resultados.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          logger.warn('No se pudo persistir token Google', {
+            userId,
+            servicio: SERVICIOS_GOOGLE[i],
+            error: r.reason?.message,
+          });
+        }
+      });
 
       oauth2Client.setCredentials(credentials);
       logger.info('Token Google refrescado', { userId, tipo });
